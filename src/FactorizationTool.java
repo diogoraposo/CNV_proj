@@ -1,10 +1,15 @@
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.concurrent.Executors;
 
 import BIT.highBIT.BasicBlock;
 import BIT.highBIT.ClassInfo;
@@ -163,7 +168,24 @@ public class FactorizationTool {
 				bw.write("dyn_num_instr: " + ((ThreadStat)dyn_num_instr.get(i)).getStat() + "\n");
 				bw.write("num_threads: " + num_threads + "\n");
 				bw.write("time_on_cpu: " + ((ThreadStat)time.get(i)).getStat() + "\n");
-				bw.write("---------------------------------------------\n");	
+//				String rqstr = ((ThreadStat)num_func_calls.get(i)).getThread_num() + ","
+//						+ ((ThreadStat)num_func_calls.get(i)).getStat() + ","
+//						+ ((ThreadStat)dyn_num_bb.get(i)).getStat() + ","
+//						+ ((ThreadStat)dyn_num_instr.get(i)).getStat() + ","
+//						+ num_threads + ","
+//						+ ((ThreadStat)time.get(i)).getStat();
+//				Thread[] threadArray = (Thread[])Thread.getAllStackTraces().keySet().toArray(new Thread[Thread.getAllStackTraces().keySet().size()]);
+//				for(int j = 0; j< Thread.getAllStackTraces().keySet().size();j++){
+//					System.out.println("Thread list " + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId());
+//					rqstr += "," + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId();
+//				}
+//				rqstr += "\n";
+//				System.out.println("Response: " + rqstr);
+				bw.write("---------------------------------------------\n");
+//				Socket request = new Socket(InetAddress.getByName("127.0.0.2"), 11000);
+//				DataOutputStream out = new DataOutputStream(request.getOutputStream());
+//				out.write(rqstr.getBytes());
+								
 			}
 			
 			bw.close();
