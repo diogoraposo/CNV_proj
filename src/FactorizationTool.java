@@ -102,7 +102,7 @@ public class FactorizationTool {
     public static synchronized void startCountCpu(int expendable){
     	long thread = Thread.currentThread().getId();
     	ThreadStat temp = new ThreadStat();
-    	temp.setStat((int)System.currentTimeMillis());
+    	temp.setLongStat((long)System.currentTimeMillis());
     	temp.setThread_num(thread);
     	time.add(temp);
     }
@@ -160,31 +160,31 @@ public class FactorizationTool {
 				System.out.println("dyn_num_bb: " + ((ThreadStat)dyn_num_bb.get(i)).getStat());
 				System.out.println("dyn_num_instr: " + ((ThreadStat)dyn_num_instr.get(i)).getStat());
 				System.out.println("num_threads: " + num_threads);
-				System.out.println("time_on_cpu: " + ((ThreadStat)time.get(i)).getStat());
+				System.out.println("time_on_cpu: " + ((ThreadStat)time.get(i)).getLongStat());
 				System.out.println("---------------------------------------------\n");
 				bw.write("For thread: " + ((ThreadStat)num_func_calls.get(i)).getThread_num() + "\n");
 				bw.write("num_func_calls: " + ((ThreadStat)num_func_calls.get(i)).getStat() + "\n");
 				bw.write("dyn_num_bb: " + ((ThreadStat)dyn_num_bb.get(i)).getStat() + "\n");
 				bw.write("dyn_num_instr: " + ((ThreadStat)dyn_num_instr.get(i)).getStat() + "\n");
 				bw.write("num_threads: " + num_threads + "\n");
-				bw.write("time_on_cpu: " + ((ThreadStat)time.get(i)).getStat() + "\n");
-//				String rqstr = ((ThreadStat)num_func_calls.get(i)).getThread_num() + ","
-//						+ ((ThreadStat)num_func_calls.get(i)).getStat() + ","
-//						+ ((ThreadStat)dyn_num_bb.get(i)).getStat() + ","
-//						+ ((ThreadStat)dyn_num_instr.get(i)).getStat() + ","
-//						+ num_threads + ","
-//						+ ((ThreadStat)time.get(i)).getStat();
+				bw.write("time_on_cpu: " + ((ThreadStat)time.get(i)).getLongStat() + "\n");
+				String rqstr = ((ThreadStat)num_func_calls.get(i)).getThread_num() + ","
+						+ ((ThreadStat)num_func_calls.get(i)).getStat() + ","
+						+ ((ThreadStat)dyn_num_bb.get(i)).getStat() + ","
+						+ ((ThreadStat)dyn_num_instr.get(i)).getStat() + ","
+						+ num_threads + ","
+						+ ((ThreadStat)time.get(i)).getLongStat();
 //				Thread[] threadArray = (Thread[])Thread.getAllStackTraces().keySet().toArray(new Thread[Thread.getAllStackTraces().keySet().size()]);
 //				for(int j = 0; j< Thread.getAllStackTraces().keySet().size();j++){
 //					System.out.println("Thread list " + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId());
 //					rqstr += "," + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId();
 //				}
-//				rqstr += "\n";
-//				System.out.println("Response: " + rqstr);
+				rqstr += "\n";
+				System.out.println("Response: " + rqstr);
 				bw.write("---------------------------------------------\n");
-//				Socket request = new Socket(InetAddress.getByName("127.0.0.2"), 11000);
-//				DataOutputStream out = new DataOutputStream(request.getOutputStream());
-//				out.write(rqstr.getBytes());
+				Socket request = new Socket(InetAddress.getByName("127.0.0.2"), 11000);
+				DataOutputStream out = new DataOutputStream(request.getOutputStream());
+				out.write(rqstr.getBytes());
 								
 			}
 			
