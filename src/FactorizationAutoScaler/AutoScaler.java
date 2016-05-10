@@ -18,6 +18,7 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 
 import FactorizationDB.FactorizationDB_API;
+import FactorizationDB.FactorizationElement;
 
 
 public class AutoScaler {
@@ -65,16 +66,20 @@ public class AutoScaler {
 				} else {
 					System.out.println("Period loop ---> There are instances running");
 				}
-				
+	
+				FactorizationElement element;
 				for(String id: instance_ids){
+					System.out.println("Instance id: " + id);
 					for(Integer thread: db_api.get_Threads(id)){
-						db_api.get_Element(id, thread);
+						element = db_api.get_Element(id, thread);
+						System.out.println("Thread: " + element.getProcessID()
+								+ " time_on_cpu: " + element.getTimeOnCpu());
 					}
 				}
 				
 				
 				Thread.sleep(period);
-				removeInstance(instance_ids.get(0));
+				//removeInstance(instance_ids.get(0));
 			}
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
