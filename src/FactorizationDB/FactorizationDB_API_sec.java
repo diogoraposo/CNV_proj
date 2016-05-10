@@ -18,6 +18,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -48,12 +49,14 @@ public class FactorizationDB_API_sec {
 	public static void main(String[] args){
 		//initialize();
 		try {
-			/*URL url = new URL("http://169.254.169.254/latest/meta-data/instance-id");
+			URL url = new URL("http://169.254.169.254/latest/meta-data/instance-id");
 		    URLConnection conn = url.openConnection();
 		    Scanner s = new Scanner(conn.getInputStream());
 		    if (s.hasNext()) {
-		      System.out.println(s.next());
-		    }*/
+		    	String instance_id = s.next();
+		      System.out.println(instance_id);
+		      
+		    }
 			
 			DataInputStream rcv;
 			local = new ServerSocket(11000, 20, InetAddress.getByName("127.0.0.2"));
@@ -74,6 +77,8 @@ public class FactorizationDB_API_sec {
 //					System.out.println("Active thread: " + parts[i]);
 //				}
 				System.out.println("---------------------------------------------\n");
+				FactorizationElement element = new FactorizationElement(parts[0], parts[1], parts[2], parts[3], parts[5]);
+				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[5]));
 			}
 			
 		} catch (IOException e) {
@@ -138,7 +143,7 @@ public class FactorizationDB_API_sec {
 		}
 	}
 	
-	public void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
+	public static void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
 		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 		
 		item.put("processID", new AttributeValue("" + processID));		
@@ -154,7 +159,7 @@ public class FactorizationDB_API_sec {
 	}
 	
 	public void insertAllElements(String instance_id, int thread_num, FactorizationElement element){
-		this.putMetric(instance_id, thread_num, element.getNumFuncCalls(), element.getDynNumBB(), element.getDynNumInst(), element.getTimeOnCpu());
+		FactorizationDB_API_sec.putMetric(instance_id, thread_num, element.getNumFuncCalls(), element.getDynNumBB(), element.getDynNumInst(), element.getTimeOnCpu());
 	}
 	
 	private FactorizationElement map2Factor(Map<String, AttributeValue> item){
