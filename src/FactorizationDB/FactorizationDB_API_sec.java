@@ -47,7 +47,7 @@ public class FactorizationDB_API_sec {
 	private static String instance_id;
 	
 	public static void main(String[] args){
-		//initialize();
+		initialize();
 		try {
 			URL url = new URL("http://169.254.169.254/latest/meta-data/instance-id");
 		    URLConnection conn = url.openConnection();
