@@ -48,8 +48,9 @@ public class FactorizationDB_API_sec implements Runnable{
 	
 	private static Socket rcvlocal;
 
-	public FactorizationDB_API_sec(Socket loc) {
+	public FactorizationDB_API_sec(Socket loc, String instance) {
 		rcvlocal = loc;
+		instance_id = instance;
 	}
 	
 	@Override
@@ -61,6 +62,7 @@ public class FactorizationDB_API_sec implements Runnable{
 			rcv = new DataInputStream(rcvlocal.getInputStream());
 			while((read = rcv.readLine()) != null){
 				String[] parts = read.split(",");
+				System.out.println("For instance: " + instance_id);
 				System.out.println("For thread: " + parts[0]);
 				System.out.println("num_func_calls: " + parts[1]);
 				System.out.println("dyn_num_bb: " + parts[2]);
@@ -69,7 +71,12 @@ public class FactorizationDB_API_sec implements Runnable{
 				System.out.println("time_on_cpu: " + parts[5]);
 				System.out.println("---------------------------------------------\n");
 				FactorizationElement element = new FactorizationElement(parts[0], parts[1], parts[2], parts[3], parts[5]);
-				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[5]));
+			
+				System.out.println("Is this where it fails?");
+				Long.parseLong(parts[5]);
+				System.out.println("Going to put elements");
+				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
+				System.out.println("Done putting elements");
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -83,7 +90,7 @@ public class FactorizationDB_API_sec implements Runnable{
 			URLConnection conn = url.openConnection();
 			Scanner s = new Scanner(conn.getInputStream());
 			if (s.hasNext()) {
-				String instance_id = s.next();
+			 instance_id = s.next();
 				System.out.println(instance_id);
 
 			}
@@ -92,7 +99,9 @@ public class FactorizationDB_API_sec implements Runnable{
 			System.out.println("Starting local process");
 			while(true){
 				rcvlocal = local.accept();
-				(new Thread(new FactorizationDB_API_sec(rcvlocal))).start();
+				System.out.println("Starting new thread");
+				(new Thread(new FactorizationDB_API_sec(rcvlocal, instance_id))).start();
+				System.out.println("Passing in front of created thread");
 			}
 
 		} catch (IOException e) {
@@ -106,6 +115,7 @@ public class FactorizationDB_API_sec implements Runnable{
 
 		ProfileCredentialsProvider pcp = new ProfileCredentialsProvider();
 		credentials = pcp.getCredentials();
+		System.out.println(credentials.getAWSAccessKeyId());
 		_db = new AmazonDynamoDBClient(credentials);
 		_db.setRegion(Region.getRegion(Regions.EU_WEST_1));
 	}
@@ -158,6 +168,8 @@ public class FactorizationDB_API_sec implements Runnable{
 	}
 
 	public static void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
+
+		System.out.println("Hello function");
 		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
 		item.put("processID", new AttributeValue("" + processID));		
@@ -165,6 +177,10 @@ public class FactorizationDB_API_sec implements Runnable{
 		item.put("dynNumBB", new AttributeValue("" + dynNumBB));
 		item.put("dynNumInst", new AttributeValue("" + dynNumInst));
 		item.put("timeOnCpu", new AttributeValue("" + timeOnCpu));
+
+		System.out.println("Yolo");
+
+		System.out.println("Putting: " + processID + "," + instance_id);		
 
 		PutItemRequest pir = new PutItemRequest(instance_id, item);
 		PutItemResult result = _db.putItem(pir);

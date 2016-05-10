@@ -116,7 +116,7 @@ public class FactorizationTool {
 				break;
 			}
 		}
-		((ThreadStat)time.get(i)).setStat(((int)System.currentTimeMillis()) - ((ThreadStat)time.get(i)).getStat());
+		((ThreadStat)time.get(i)).setLongStat(((long)System.currentTimeMillis()) - ((ThreadStat)time.get(i)).getLongStat());
     }
 
     public static synchronized void dynMethodCount(int incr) 
