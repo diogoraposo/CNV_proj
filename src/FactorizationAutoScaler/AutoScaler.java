@@ -11,7 +11,13 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceState;
+import com.amazonaws.services.ec2.model.InstanceStatus;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
@@ -96,10 +102,12 @@ public class AutoScaler {
 							totaldynbb += element.getDynNumBB();
 							totalinst += element.getDynNumInst();
 					}
-					avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
+					if((db_api.getAllProcessInstrumentationData(id).size()>0))
+							avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
 					System.out.println("Avgcpu: " + avgcpu
 							+ " totalbb: " + totaldynbb 
 							+ " totalinst: " + totalinst);
+					statusInstance(id);
 					if(avgcpu > avgcpu_upper || totaldynbb > totalbb_upper || totalinst > totalinst_upper || activethreads > active_upper){
 						System.out.println("Full cause avgpu: " + (avgcpu > avgcpu_upper) 
 								+ " totaldynbb: " + (totaldynbb > totalbb_upper) 
@@ -116,7 +124,7 @@ public class AutoScaler {
 						//						}
 						removeInstance(id);
 					} 	
-
+					
 				}
 
 				if(fullinstances == instance_ids.size()){
@@ -143,7 +151,7 @@ public class AutoScaler {
 		System.out.println("Creating a new ec2 instance");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 
-		runInstancesRequest.withImageId("ami-bf018bcc")
+		runInstancesRequest.withImageId("ami-f8109a8b")
 		.withInstanceType("t2.micro")
 		.withMinCount(1)
 		.withMaxCount(1)
@@ -183,6 +191,14 @@ public class AutoScaler {
 
 		db_api.deleteTable(id);
 		instance_ids.remove(id);
+	}
+	
+	public static String statusInstance(String id){
+		DescribeInstancesRequest describeInstanceRequest = new DescribeInstancesRequest().withInstanceIds(id);
+	    DescribeInstancesResult describeInstanceResult = ec2.describeInstances(describeInstanceRequest);
+	    InstanceState state = describeInstanceResult.getReservations().get(0).getInstances().get(0).getState();
+	    System.out.println("Instace " + id + " is " + state.getCode());
+	    return Integer.toString(state.getCode());
 	}
 
 }
