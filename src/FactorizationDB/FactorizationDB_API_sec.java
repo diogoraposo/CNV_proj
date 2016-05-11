@@ -14,11 +14,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
+import com.amazonaws.services.dynamodbv2.document.DeleteItemOutcome;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -36,6 +41,8 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
@@ -62,6 +69,7 @@ public class FactorizationDB_API_sec implements Runnable{
 			rcv = new DataInputStream(rcvlocal.getInputStream());
 			while((read = rcv.readLine()) != null){
 				String[] parts = read.split(",");
+				System.out.println("Read: " + read);
 				System.out.println("For instance: " + instance_id);
 				System.out.println("For thread: " + parts[0]);
 				System.out.println("num_func_calls: " + parts[1]);
@@ -70,13 +78,26 @@ public class FactorizationDB_API_sec implements Runnable{
 				System.out.println("num_threads: " + parts[4]);
 				System.out.println("time_on_cpu: " + parts[5]);
 				System.out.println("---------------------------------------------\n");
-				FactorizationElement element = new FactorizationElement(parts[0], parts[1], parts[2], parts[3], parts[5]);
 			
-				System.out.println("Is this where it fails?");
-				Long.parseLong(parts[5]);
+				if(Long.parseLong(parts[5]) > 10000000){
+					break;
+				}
+				read.substring(parts[0].length() 
+						+ parts[1].length() 
+						+ parts[2].length() 
+						+ parts[3].length() 
+						+ parts[4].length() 
+						+ parts[5].length());
 				System.out.println("Going to put elements");
 				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
 				System.out.println("Done putting elements");
+				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
+					System.out.println("key" + f.getProcessID());
+					if(!read.contains(Integer.toString(f.getProcessID()))){
+						System.out.println("DELETING THREAD " + f.getProcessID());
+						deleteThread(f.getProcessID());
+					}
+				}	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -118,17 +139,6 @@ public class FactorizationDB_API_sec implements Runnable{
 		System.out.println(credentials.getAWSAccessKeyId());
 		_db = new AmazonDynamoDBClient(credentials);
 		_db.setRegion(Region.getRegion(Regions.EU_WEST_1));
-	}
-
-	public boolean doesTableExist(String table_id){
-		boolean answer;
-		try{
-			TableDescription table = _db.describeTable(new DescribeTableRequest(table_id)).getTable();
-			answer = TableStatus.ACTIVE.toString().equals(table.getTableStatus());
-		}catch(ResourceNotFoundException rnfe){
-			answer = false;
-		}
-		return answer;
 	}
 
 	public void createTable(String instance_id){
@@ -219,6 +229,30 @@ public class FactorizationDB_API_sec implements Runnable{
 
 		return answer;
 	}
+
+
+	public boolean doesTableExist(String table_id){
+		boolean answer;
+		try{
+			TableDescription table = _db.describeTable(new DescribeTableRequest(table_id)).getTable();
+			answer = TableStatus.ACTIVE.toString().equals(table.getTableStatus());
+		}catch(ResourceNotFoundException rnfe){
+			answer = false;
+		}
+		return answer;
+	}
+
+	public void deleteThread(int thread){
+		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+
+		item.put("processID", new AttributeValue("" + thread));
+
+		System.out.println("Starting to remove");
+		DeleteItemRequest pir = new DeleteItemRequest(instance_id, item);
+		DeleteItemResult result = _db.deleteItem(pir);
+
+		System.out.println("Result: " + result);
+	}	
 
 	private ArrayList<FactorizationElement> getAllProcessInstrumentationData(String instance_id){
 		ArrayList<FactorizationElement> answer = new ArrayList<FactorizationElement>();
