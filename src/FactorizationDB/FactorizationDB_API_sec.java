@@ -70,34 +70,38 @@ public class FactorizationDB_API_sec implements Runnable{
 			while((read = rcv.readLine()) != null){
 				String[] parts = read.split(",");
 				System.out.println("Read: " + read);
-				System.out.println("For instance: " + instance_id);
-				System.out.println("For thread: " + parts[0]);
-				System.out.println("num_func_calls: " + parts[1]);
-				System.out.println("dyn_num_bb: " + parts[2]);
-				System.out.println("dyn_num_instr: " + parts[3]);
-				System.out.println("num_threads: " + parts[4]);
-				System.out.println("time_on_cpu: " + parts[5]);
-				System.out.println("---------------------------------------------\n");
+				if(parts[0].equals("Remove")){
+					deleteThread(Integer.parseInt(parts[1]));
+				} else {
+					System.out.println("For instance: " + instance_id);
+					System.out.println("For thread: " + parts[0]);
+					System.out.println("num_func_calls: " + parts[1]);
+					System.out.println("dyn_num_bb: " + parts[2]);
+					System.out.println("dyn_num_instr: " + parts[3]);
+					System.out.println("num_threads: " + parts[4]);
+					System.out.println("time_on_cpu: " + parts[5]);
+					System.out.println("---------------------------------------------\n");
 
-				if(Long.parseLong(parts[5]) > 10000000){
-					break;
+					if(Long.parseLong(parts[5]) > 10000000){
+						break;
+					}
+					read.substring(parts[0].length() 
+							+ parts[1].length() 
+							+ parts[2].length() 
+							+ parts[3].length() 
+							+ parts[4].length() 
+							+ parts[5].length());
+					System.out.println("Going to put elements");
+					putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
+					System.out.println("Done putting elements");
+					//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
+					//					System.out.println("key" + f.getProcessID());
+					//					if(!read.contains(Integer.toString(f.getProcessID()))){
+					//						System.out.println("DELETING THREAD " + f.getProcessID());
+					//						deleteThread(f.getProcessID());
+					//					}
+					//				}	
 				}
-				read.substring(parts[0].length() 
-						+ parts[1].length() 
-						+ parts[2].length() 
-						+ parts[3].length() 
-						+ parts[4].length() 
-						+ parts[5].length());
-				System.out.println("Going to put elements");
-				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
-				System.out.println("Done putting elements");
-				//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
-				//					System.out.println("key" + f.getProcessID());
-				//					if(!read.contains(Integer.toString(f.getProcessID()))){
-				//						System.out.println("DELETING THREAD " + f.getProcessID());
-				//						deleteThread(f.getProcessID());
-				//					}
-				//				}	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
