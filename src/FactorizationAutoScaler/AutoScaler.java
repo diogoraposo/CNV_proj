@@ -127,13 +127,13 @@ public class AutoScaler {
 				}
 				
 				if(fullinstances == instance_ids.size()){
-					createInstance();
 					for(String ide2: instance_ids){
 					for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
 		System.out.println("key" + f.getProcessID());
 			System.out.println("DELETING THREAD " + f.getProcessID());
 			db_api.deleteThread(f.getProcessID(), ide2);
 	}}
+				createInstance();
 				}	
 			}
 		} catch (Exception e1) {
