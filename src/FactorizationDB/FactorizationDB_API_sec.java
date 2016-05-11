@@ -91,13 +91,13 @@ public class FactorizationDB_API_sec implements Runnable{
 				System.out.println("Going to put elements");
 				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
 				System.out.println("Done putting elements");
-				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
-					System.out.println("key" + f.getProcessID());
-					if(!read.contains(Integer.toString(f.getProcessID()))){
-						System.out.println("DELETING THREAD " + f.getProcessID());
-						deleteThread(f.getProcessID());
-					}
-				}	
+//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
+//					System.out.println("key" + f.getProcessID());
+//					if(!read.contains(Integer.toString(f.getProcessID()))){
+//						System.out.println("DELETING THREAD " + f.getProcessID());
+//						deleteThread(f.getProcessID());
+//					}
+//				}	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
