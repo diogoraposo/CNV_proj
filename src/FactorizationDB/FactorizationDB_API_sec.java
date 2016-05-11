@@ -52,14 +52,14 @@ public class FactorizationDB_API_sec implements Runnable{
 	private static AmazonDynamoDBClient _db;
 	private static ServerSocket local;
 	private static String instance_id;
-	
+
 	private static Socket rcvlocal;
 
 	public FactorizationDB_API_sec(Socket loc, String instance) {
 		rcvlocal = loc;
 		instance_id = instance;
 	}
-	
+
 	@Override
 	public void run() {
 		initialize();
@@ -78,7 +78,7 @@ public class FactorizationDB_API_sec implements Runnable{
 				System.out.println("num_threads: " + parts[4]);
 				System.out.println("time_on_cpu: " + parts[5]);
 				System.out.println("---------------------------------------------\n");
-			
+
 				if(Long.parseLong(parts[5]) > 10000000){
 					break;
 				}
@@ -91,27 +91,27 @@ public class FactorizationDB_API_sec implements Runnable{
 				System.out.println("Going to put elements");
 				putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
 				System.out.println("Done putting elements");
-//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
-//					System.out.println("key" + f.getProcessID());
-//					if(!read.contains(Integer.toString(f.getProcessID()))){
-//						System.out.println("DELETING THREAD " + f.getProcessID());
-//						deleteThread(f.getProcessID());
-//					}
-//				}	
+				//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
+				//					System.out.println("key" + f.getProcessID());
+				//					if(!read.contains(Integer.toString(f.getProcessID()))){
+				//						System.out.println("DELETING THREAD " + f.getProcessID());
+				//						deleteThread(f.getProcessID());
+				//					}
+				//				}	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
 	}
-	
+
 	public static void main(String[] args){
 		try {
 			URL url = new URL("http://169.254.169.254/latest/meta-data/instance-id");
 			URLConnection conn = url.openConnection();
 			Scanner s = new Scanner(conn.getInputStream());
 			if (s.hasNext()) {
-			 instance_id = s.next();
+				instance_id = s.next();
 				System.out.println(instance_id);
 
 			}
@@ -178,8 +178,6 @@ public class FactorizationDB_API_sec implements Runnable{
 	}
 
 	public static void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
-
-		System.out.println("Hello function");
 		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
 		item.put("processID", new AttributeValue("" + processID));		
@@ -187,8 +185,6 @@ public class FactorizationDB_API_sec implements Runnable{
 		item.put("dynNumBB", new AttributeValue("" + dynNumBB));
 		item.put("dynNumInst", new AttributeValue("" + dynNumInst));
 		item.put("timeOnCpu", new AttributeValue("" + timeOnCpu));
-
-		System.out.println("Yolo");
 
 		System.out.println("Putting: " + processID + "," + instance_id);		
 
@@ -306,7 +302,7 @@ public class FactorizationDB_API_sec implements Runnable{
 		return threads;
 	}
 
-	
+
 
 
 }

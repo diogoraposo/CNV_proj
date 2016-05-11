@@ -60,8 +60,6 @@ public class AutoScaler {
 
 
 	public static void main(String[] args) {
-
-		//period = Integer.parseInt(args[0]);
 		period = 60000;
 		System.out.println("Don't forget to add the credentials file");
 		try {
@@ -81,8 +79,8 @@ public class AutoScaler {
 					System.out.println("Period loop ---> There are instances running");
 				}
 				Thread.sleep(period);
-			fullinstances = 0;
-							ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
+				fullinstances = 0;
+				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
 				FactorizationElement element;
 				for(String id: instance_tmps){
 					activethreads = 0;
@@ -93,9 +91,9 @@ public class AutoScaler {
 					for(Integer thread: db_api.get_Threads(id)){
 						element = db_api.get_Element(id, thread);
 						System.out.println("Thread: " + element.getProcessID()
-								+ " time_on_cpu: " + element.getTimeOnCpu()
-								+ " bb: " + element.getDynNumBB()
-								+ " inst: " + element.getDynNumInst());
+						+ " time_on_cpu: " + element.getTimeOnCpu()
+						+ " bb: " + element.getDynNumBB()
+						+ " inst: " + element.getDynNumInst());
 						if(element.getTimeOnCpu()>10000000){
 							activethreads += 1;
 						} else {
@@ -115,25 +113,27 @@ public class AutoScaler {
 								+ " active_threads" + (activethreads > active_upper));
 						fullinstances += 1;
 					} else if(avgcpu < avgcpu_lower && totaldynbb < totalbb_lower && totalinst < totalinst_lower && activethreads == 0 && instance_ids.size() > 1){
-					for(String ide : instance_ids){
-					for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide)){
-						System.out.println("key" + f.getProcessID());
-						System.out.println("DELETING THREAD " + f.getProcessID());
-						db_api.deleteThread(f.getProcessID(), ide);
-					}}
+						//						for(String ide : instance_ids){
+						//							for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide)){
+						//								System.out.println("key" + f.getProcessID());
+						//								System.out.println("DELETING THREAD " + f.getProcessID());
+						//								db_api.deleteThread(f.getProcessID(), ide);
+						//							}
+						//						}
 						removeInstance(id);
 					} 	
-					
+
 				}
-				
+
 				if(fullinstances == instance_ids.size()){
-					for(String ide2: instance_ids){
-					for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
-		System.out.println("key" + f.getProcessID());
-			System.out.println("DELETING THREAD " + f.getProcessID());
-			db_api.deleteThread(f.getProcessID(), ide2);
-	}}
-				createInstance();
+//					for(String ide2: instance_ids){
+//						for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
+//							System.out.println("key" + f.getProcessID());
+//							System.out.println("DELETING THREAD " + f.getProcessID());
+//							db_api.deleteThread(f.getProcessID(), ide2);
+//						}
+//					}
+					createInstance();
 				}	
 			}
 		} catch (Exception e1) {
@@ -155,9 +155,9 @@ public class AutoScaler {
 		.withMaxCount(1)
 		.withKeyName("precious-thing")
 		.withSecurityGroups("yesofficer");
-		
+
 		RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
-		
+
 		instance_ids.add(runInstancesResult.getReservation().getInstances().get(0).getInstanceId());
 		for(String i: instance_ids){
 			System.out.println("Running instance: " + i);
@@ -181,12 +181,12 @@ public class AutoScaler {
 		singleIdList.add(id);
 		TerminateInstancesRequest termInstanceRequest = new TerminateInstancesRequest();
 		termInstanceRequest.setInstanceIds(singleIdList);
-		
+
 		TerminateInstancesResult termInstancesResult = ec2.terminateInstances(termInstanceRequest);
-		
+
 		System.out.println("Terminating instance with id: " + id);
 		System.out.println(termInstancesResult.getTerminatingInstances().get(0).getInstanceId());
-		
+
 		db_api.deleteTable(id);
 		instance_ids.remove(id);
 	}
