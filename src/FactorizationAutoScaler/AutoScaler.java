@@ -28,6 +28,14 @@ public class AutoScaler {
 	private static ArrayList<String> instance_ids = new ArrayList<String>();
 	private static FactorizationDB_API db_api = new FactorizationDB_API();
 
+	private static long avgcpu_lower = 10000;
+	private static long avgcpu_upper = 70000;
+	private static int totalbb_lower = 100000;
+	private static int totalbb_upper = 800000;
+	private static int totalinst_lower = 20000;
+	private static int totalinst_upper = 100000;
+	private static int active_upper = 5;
+
 	private static void init() throws Exception {
 		/*
 		 * The ProfileCredentialsProvider will return your [default]
@@ -58,6 +66,11 @@ public class AutoScaler {
 		System.out.println("Don't forget to add the credentials file");
 		try {
 			init();
+			int activethreads;
+			int avgcpu;
+			int totaldynbb;
+			int totalinst;
+			int fullinstances;
 			while(true){
 
 				if(!areAnyActive()){
@@ -66,18 +79,49 @@ public class AutoScaler {
 				} else {
 					System.out.println("Period loop ---> There are instances running");
 				}
-	
+				
+			fullinstances = 0;
+							ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
 				FactorizationElement element;
-				for(String id: instance_ids){
+				for(String id: instance_tmps){
+					activethreads = 0;
+					avgcpu = 0;
+					totaldynbb = 0;
+					totalinst = 0;
 					System.out.println("Instance id: " + id);
 					for(Integer thread: db_api.get_Threads(id)){
 						element = db_api.get_Element(id, thread);
 						System.out.println("Thread: " + element.getProcessID()
-								+ " time_on_cpu: " + element.getTimeOnCpu());
+								+ " time_on_cpu: " + element.getTimeOnCpu()
+								+ " bb: " + element.getDynNumBB()
+								+ " inst: " + element.getDynNumInst());
+						if(element.getTimeOnCpu()>10000000){
+							activethreads += 1;
+						} else {
+							avgcpu += element.getTimeOnCpu();
+							totaldynbb += element.getDynNumBB();
+							totalinst += element.getDynNumInst();
+						}
+						avgcpu = avgcpu/(db_api.get_Threads(id).size());
+						System.out.println("Avgcpu: " + avgcpu
+								+ " totalbb: " + totaldynbb 
+								+ " totalinst: " + totalinst);
 					}
+					if(avgcpu > avgcpu_upper || totaldynbb > totalbb_upper || totalinst > totalinst_upper || activethreads > active_upper){
+						System.out.println("Full cause avgpu: " + (avgcpu > avgcpu_upper) 
+								+ " totaldynbb: " + (totaldynbb > totalbb_upper) 
+								+ " totalinst: " + (totalinst > totalinst_upper)
+								+ " active_threads" + (activethreads > active_upper));
+						fullinstances += 1;
+					} else if(avgcpu < avgcpu_lower && totaldynbb < totalbb_lower && totalinst < totalinst_lower && activethreads == 0 && instance_ids.size() > 1){
+						removeInstance(id);
+					} 	
+					
 				}
 				
-				
+				if(fullinstances == instance_ids.size()){
+					createInstance();
+				}	
 				Thread.sleep(period);
 				//removeInstance(instance_ids.get(0));
 			}
@@ -94,7 +138,7 @@ public class AutoScaler {
 		System.out.println("Creating a new ec2 instance");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 
-		runInstancesRequest.withImageId("ami-9d67e7ee")
+		runInstancesRequest.withImageId("ami-0c40ca7f")
 		.withInstanceType("t2.micro")
 		.withMinCount(1)
 		.withMaxCount(1)
@@ -107,7 +151,9 @@ public class AutoScaler {
 		for(String i: instance_ids){
 			System.out.println("Running instance: " + i);
 		}
-		
+		System.out.println("init");
+		db_api.initialize();	
+		System.out.println("done");
 		db_api.createTable(runInstancesResult.getReservation().getInstances().get(0).getInstanceId());
 	}
 
@@ -131,6 +177,7 @@ public class AutoScaler {
 		System.out.println(termInstancesResult.getTerminatingInstances().get(0).getInstanceId());
 		
 		db_api.deleteTable(id);
+		instance_ids.remove(id);
 	}
 
 }
