@@ -45,6 +45,7 @@ public class FactorizationTool {
 				}
 				if(routine.getMethodName().equals("calcPrimeFactors")){
 					routine.addBefore("FactorizationTool", "startCountCpu", new Integer(1));
+					routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
 				}
 				if(routine.getMethodName().equals("start")){
 					routine.addBefore("FactorizationTool", "updateDB", new Integer(1));

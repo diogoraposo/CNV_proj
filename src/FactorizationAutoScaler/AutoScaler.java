@@ -81,31 +81,25 @@ public class AutoScaler {
 				Thread.sleep(period);
 				fullinstances = 0;
 				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
-				FactorizationElement element;
 				for(String id: instance_tmps){
 					activethreads = 0;
 					avgcpu = 0;
 					totaldynbb = 0;
 					totalinst = 0;
 					System.out.println("Instance id: " + id);
-					for(Integer thread: db_api.get_Threads(id)){
-						element = db_api.get_Element(id, thread);
+					for(FactorizationElement element: db_api.getAllProcessInstrumentationData(id)){
 						System.out.println("Thread: " + element.getProcessID()
 						+ " time_on_cpu: " + element.getTimeOnCpu()
 						+ " bb: " + element.getDynNumBB()
 						+ " inst: " + element.getDynNumInst());
-						if(element.getTimeOnCpu()>10000000){
-							activethreads += 1;
-						} else {
 							avgcpu += element.getTimeOnCpu();
 							totaldynbb += element.getDynNumBB();
 							totalinst += element.getDynNumInst();
-						}
-						avgcpu = avgcpu/(db_api.get_Threads(id).size());
-						System.out.println("Avgcpu: " + avgcpu
-								+ " totalbb: " + totaldynbb 
-								+ " totalinst: " + totalinst);
 					}
+					avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
+					System.out.println("Avgcpu: " + avgcpu
+							+ " totalbb: " + totaldynbb 
+							+ " totalinst: " + totalinst);
 					if(avgcpu > avgcpu_upper || totaldynbb > totalbb_upper || totalinst > totalinst_upper || activethreads > active_upper){
 						System.out.println("Full cause avgpu: " + (avgcpu > avgcpu_upper) 
 								+ " totaldynbb: " + (totaldynbb > totalbb_upper) 
@@ -126,13 +120,13 @@ public class AutoScaler {
 				}
 
 				if(fullinstances == instance_ids.size()){
-//					for(String ide2: instance_ids){
-//						for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
-//							System.out.println("key" + f.getProcessID());
-//							System.out.println("DELETING THREAD " + f.getProcessID());
-//							db_api.deleteThread(f.getProcessID(), ide2);
-//						}
-//					}
+					//					for(String ide2: instance_ids){
+					//						for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
+					//							System.out.println("key" + f.getProcessID());
+					//							System.out.println("DELETING THREAD " + f.getProcessID());
+					//							db_api.deleteThread(f.getProcessID(), ide2);
+					//						}
+					//					}
 					createInstance();
 				}	
 			}
