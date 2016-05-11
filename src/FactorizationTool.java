@@ -174,11 +174,11 @@ public class FactorizationTool {
 						+ ((ThreadStat)dyn_num_instr.get(i)).getStat() + ","
 						+ num_threads + ","
 						+ ((ThreadStat)time.get(i)).getLongStat();
-//				Thread[] threadArray = (Thread[])Thread.getAllStackTraces().keySet().toArray(new Thread[Thread.getAllStackTraces().keySet().size()]);
-//				for(int j = 0; j< Thread.getAllStackTraces().keySet().size();j++){
-//					System.out.println("Thread list " + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId());
-//					rqstr += "," + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId();
-//				}
+				Thread[] threadArray = (Thread[])Thread.getAllStackTraces().keySet().toArray(new Thread[Thread.getAllStackTraces().keySet().size()]);
+				for(int j = 0; j< Thread.getAllStackTraces().keySet().size();j++){
+					System.out.println("Thread list " + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId());
+					rqstr += "," + ((Thread)Thread.getAllStackTraces().keySet().toArray()[j]).getId();
+				}
 				rqstr += "\n";
 				System.out.println("Response: " + rqstr);
 				bw.write("---------------------------------------------\n");
