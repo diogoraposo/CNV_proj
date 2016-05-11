@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+
+import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteTableResult;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
@@ -28,6 +31,9 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
+
 
 public class FactorizationDB_API {
 	
@@ -90,6 +96,19 @@ public class FactorizationDB_API {
 			System.out.println(result);
 		}
 	}
+
+	public void deleteThread(int thread, String instance_id){
+		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+
+		item.put("processID", new AttributeValue("" + thread));
+
+		System.out.println("Starting to remove");
+		DeleteItemRequest pir = new DeleteItemRequest(instance_id, item);
+		DeleteItemResult result = _db.deleteItem(pir);
+
+		System.out.println("Result: " + result);
+	}
+
 	
 	public void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
 		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
@@ -115,7 +134,7 @@ public class FactorizationDB_API {
 		return new FactorizationElement(item.get("processID").getS(), item.get("numFuncCalls").getS(), item.get("dynNumBB").getS(), item.get("dynNumInst").getS(), item.get("timeOnCpu").getS());
 	}
 	
-	private FactorizationElement getProcessInstrumentationData(String instance_id, int processID){
+	public FactorizationElement getProcessInstrumentationData(String instance_id, int processID){
 		FactorizationElement answer = null;
 		Map<String, AttributeValue> itemKey = new HashMap<String, AttributeValue>();
 		Map<String, AttributeValue> fetchedItem;
@@ -138,7 +157,7 @@ public class FactorizationDB_API {
 		return answer;
 	}
 	
-	private ArrayList<FactorizationElement> getAllProcessInstrumentationData(String instance_id){
+	public ArrayList<FactorizationElement> getAllProcessInstrumentationData(String instance_id){
 		ArrayList<FactorizationElement> answer = new ArrayList<FactorizationElement>();
 		
 		ScanRequest sr = new ScanRequest(instance_id);

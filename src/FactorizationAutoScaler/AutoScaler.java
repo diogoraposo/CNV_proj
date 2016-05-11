@@ -28,12 +28,12 @@ public class AutoScaler {
 	private static ArrayList<String> instance_ids = new ArrayList<String>();
 	private static FactorizationDB_API db_api = new FactorizationDB_API();
 
-	private static long avgcpu_lower = 10000;
+	private static long avgcpu_lower = 20000;
 	private static long avgcpu_upper = 70000;
-	private static int totalbb_lower = 100000;
-	private static int totalbb_upper = 800000;
-	private static int totalinst_lower = 20000;
-	private static int totalinst_upper = 100000;
+	private static int totalbb_lower = 1000;
+	private static int totalbb_upper = 100000;
+	private static int totalinst_lower = 1000;
+	private static int totalinst_upper = 50000;
 	private static int active_upper = 5;
 
 	private static void init() throws Exception {
@@ -76,10 +76,11 @@ public class AutoScaler {
 				if(!areAnyActive()){
 					System.out.println("Period loop ---> There are no instances running, creating one");
 					createInstance();
+					continue;
 				} else {
 					System.out.println("Period loop ---> There are instances running");
 				}
-				
+				Thread.sleep(period);
 			fullinstances = 0;
 							ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
 				FactorizationElement element;
@@ -114,6 +115,12 @@ public class AutoScaler {
 								+ " active_threads" + (activethreads > active_upper));
 						fullinstances += 1;
 					} else if(avgcpu < avgcpu_lower && totaldynbb < totalbb_lower && totalinst < totalinst_lower && activethreads == 0 && instance_ids.size() > 1){
+					for(String ide : instance_ids){
+					for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide)){
+						System.out.println("key" + f.getProcessID());
+						System.out.println("DELETING THREAD " + f.getProcessID());
+						db_api.deleteThread(f.getProcessID(), ide);
+					}}
 						removeInstance(id);
 					} 	
 					
@@ -121,9 +128,13 @@ public class AutoScaler {
 				
 				if(fullinstances == instance_ids.size()){
 					createInstance();
+					for(String ide2: instance_ids){
+					for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
+		System.out.println("key" + f.getProcessID());
+			System.out.println("DELETING THREAD " + f.getProcessID());
+			db_api.deleteThread(f.getProcessID(), ide2);
+	}}
 				}	
-				Thread.sleep(period);
-				//removeInstance(instance_ids.get(0));
 			}
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -138,7 +149,7 @@ public class AutoScaler {
 		System.out.println("Creating a new ec2 instance");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 
-		runInstancesRequest.withImageId("ami-0c40ca7f")
+		runInstancesRequest.withImageId("ami-bf018bcc")
 		.withInstanceType("t2.micro")
 		.withMinCount(1)
 		.withMaxCount(1)
