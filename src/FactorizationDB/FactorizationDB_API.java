@@ -33,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
+import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 
 
 public class FactorizationDB_API {
@@ -207,5 +208,13 @@ public class FactorizationDB_API {
 		}
 
 		return threads;
+	}
+
+	public ArrayList<String> listTables(){
+		ListTablesResult result = _db.listTables();
+		for(String s: result.getTableNames()){
+			System.out.println("Table: " + s);
+		}
+		return (ArrayList<String>)result.getTableNames();
 	}
 }

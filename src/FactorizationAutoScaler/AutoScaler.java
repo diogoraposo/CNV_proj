@@ -66,7 +66,7 @@ public class AutoScaler {
 
 
 	public static void main(String[] args) {
-		period = 60000;
+		period = 180000;
 		System.out.println("Don't forget to add the credentials file");
 		try {
 			init();
