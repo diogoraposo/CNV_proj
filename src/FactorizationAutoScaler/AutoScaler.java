@@ -139,7 +139,7 @@ public class AutoScaler {
 		System.out.println("Creating a new ec2 instance");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 
-		runInstancesRequest.withImageId("ami-f8109a8b")
+		runInstancesRequest.withImageId("ami-a43cadd7")
 		.withInstanceType("t2.micro")
 		.withMinCount(1)
 		.withMaxCount(1)
