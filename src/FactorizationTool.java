@@ -22,6 +22,7 @@ public class FactorizationTool {
 	private static Vector dyn_num_instr = new Vector();
 	private static Vector thread_cpu_time = new Vector();
 	private static Vector time = new Vector();
+	private static Vector endTime = new Vector();
 	private static int num_threads;       
 
 	public static void main(String argv[]){
@@ -42,13 +43,14 @@ public class FactorizationTool {
 				//routine.addAfter("FactorizationTool", "stopCountCpu", new Integer(0));
 				if(routine.getMethodName().equals("end")){
 					routine.addBefore("FactorizationTool", "logFile", log_file);
+					routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
 				}
 				if(routine.getMethodName().equals("calcPrimeFactors")){
 					routine.addBefore("FactorizationTool", "startCountCpu", new Integer(1));
-					routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
+					//routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
 				}
 				if(routine.getMethodName().equals("start")){
-					routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
+					//routine.addBefore("FactorizationTool", "updateDB", new Integer(1));
 				}
 
 				for (Enumeration b = routine.getBasicBlocks().elements(); b.hasMoreElements(); ) {
@@ -173,7 +175,8 @@ public class FactorizationTool {
 				+ ((ThreadStat)dyn_num_bb.get(i)).getStat() + ","
 				+ ((ThreadStat)dyn_num_instr.get(i)).getStat() + ","
 				+ num_threads + ","
-				+ (((long)System.currentTimeMillis())-((ThreadStat)time.get(i)).getLongStat());
+				+ (((long)System.currentTimeMillis())-((ThreadStat)time.get(i)).getLongStat()) + ","
+				+ ((long)System.currentTimeMillis());
 		Socket request;
 		try {
 			request = new Socket(InetAddress.getByName("127.0.0.2"), 11000);

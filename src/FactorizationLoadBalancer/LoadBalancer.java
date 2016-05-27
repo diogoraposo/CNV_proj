@@ -117,42 +117,48 @@ public class LoadBalancer {
 			int totaldynbb;
 			int totalinst;	
 			try{
-				int i = 0;
-				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
+				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();
+				int lower = 0;
+				String instance = "";
 				for(String id: instance_tmps){
-
+					int temp;
 					avgcpu = 0;
 					totaldynbb = 0;
 					totalinst = 0;
 					System.out.println("Instance id: " + id);
 					for(FactorizationElement element: db_api.getAllProcessInstrumentationData(id)){
-						System.out.println("Thread: " + element.getProcessID()
-						+ " time_on_cpu: " + element.getTimeOnCpu()
-						+ " bb: " + element.getDynNumBB()
-						+ " inst: " + element.getDynNumInst());
-						avgcpu += element.getTimeOnCpu();
-						totaldynbb += element.getDynNumBB();
-						totalinst += element.getDynNumInst();
+						if((long)System.currentTimeMillis()-element.getEndTime() < 120000){
+							System.out.println("Thread: " + element.getProcessID()
+							+ " time_on_cpu: " + element.getTimeOnCpu()
+							+ " bb: " + element.getDynNumBB()
+							+ " inst: " + element.getDynNumInst());
+							avgcpu += element.getTimeOnCpu();
+							totaldynbb += element.getDynNumBB();
+							totalinst += element.getDynNumInst();
+						}
 					}
 					if(db_api.getAllProcessInstrumentationData(id).size()>0)
 						avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
 					System.out.println("Avgcpu: " + avgcpu
 							+ " totalbb: " + totaldynbb 
 							+ " totalinst: " + totalinst);
-					if(!(avgcpu > avgcpu_upper || totaldynbb > totalbb_upper || totalinst > totalinst_upper) || i==instance_tmps.size()){
-						System.out.println("Full cause avgpu: " + (avgcpu > avgcpu_upper) 
-								+ " totaldynbb: " + (totaldynbb > totalbb_upper) 
-								+ " totalinst: " + (totalinst > totalinst_upper));
+					temp = (totaldynbb+totalinst)/avgcpu;
+					if(lower==0){
+						lower = temp;
+						instance = id;
+					} else if(temp > lower){
+						lower = temp;
+						instance = id;
+					}
 
-						String response=sendGet(id, calc);
-						exchange.sendResponseHeaders(200, response.length());
-						OutputStream os = exchange.getResponseBody();
-						os.write(response.getBytes());
-						os.close();
-						break;
-					} 
-					i++;
-				} 
+				}
+
+				String response=sendGet(instance, calc);
+				exchange.sendResponseHeaders(200, response.length());
+				OutputStream os = exchange.getResponseBody();
+				os.write(response.getBytes());
+				os.close();
+
 			} catch(Exception e){
 				System.out.println("[" + Thread.currentThread().getId() + "] has crashed...");
 				e.printStackTrace();

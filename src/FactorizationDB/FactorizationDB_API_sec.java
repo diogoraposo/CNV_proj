@@ -92,15 +92,8 @@ public class FactorizationDB_API_sec implements Runnable{
 							+ parts[4].length() 
 							+ parts[5].length());
 					System.out.println("Going to put elements");
-					putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]));
+					putMetric(instance_id, Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
 					System.out.println("Done putting elements");
-					//				for(FactorizationElement f: getAllProcessInstrumentationData(instance_id)){
-					//					System.out.println("key" + f.getProcessID());
-					//					if(!read.contains(Integer.toString(f.getProcessID()))){
-					//						System.out.println("DELETING THREAD " + f.getProcessID());
-					//						deleteThread(f.getProcessID());
-					//					}
-					//				}	
 				}
 			}
 		} catch (IOException e) {
@@ -181,7 +174,7 @@ public class FactorizationDB_API_sec implements Runnable{
 		}
 	}
 
-	public static void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu){
+	public static void putMetric(String instance_id, int processID, int numFuncCalls, int dynNumBB, int dynNumInst, long timeOnCpu, long endTime){
 		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
 		item.put("processID", new AttributeValue("" + processID));		
@@ -189,6 +182,7 @@ public class FactorizationDB_API_sec implements Runnable{
 		item.put("dynNumBB", new AttributeValue("" + dynNumBB));
 		item.put("dynNumInst", new AttributeValue("" + dynNumInst));
 		item.put("timeOnCpu", new AttributeValue("" + timeOnCpu));
+		item.put("endTime", new AttributeValue("" + endTime));
 
 		System.out.println("Putting: " + processID + "," + instance_id);		
 
@@ -199,12 +193,12 @@ public class FactorizationDB_API_sec implements Runnable{
 	}
 
 	public void insertAllElements(String instance_id, int thread_num, FactorizationElement element){
-		FactorizationDB_API_sec.putMetric(instance_id, thread_num, element.getNumFuncCalls(), element.getDynNumBB(), element.getDynNumInst(), element.getTimeOnCpu());
+		FactorizationDB_API_sec.putMetric(instance_id, thread_num, element.getNumFuncCalls(), element.getDynNumBB(), element.getDynNumInst(), element.getTimeOnCpu(), element.getEndTime());
 	}
 
 	private FactorizationElement map2Factor(Map<String, AttributeValue> item){
 		System.out.println(item);
-		return new FactorizationElement(item.get("processID").getS(), item.get("numFuncCalls").getS(), item.get("dynNumBB").getS(), item.get("dynNumInst").getS(), item.get("timeOnCpu").getS());
+		return new FactorizationElement(item.get("processID").getS(), item.get("numFuncCalls").getS(), item.get("dynNumBB").getS(), item.get("dynNumInst").getS(), item.get("timeOnCpu").getS(), item.get("endTime").getS());
 	}
 
 	private FactorizationElement getProcessInstrumentationData(String instance_id, int processID){
@@ -292,6 +286,11 @@ public class FactorizationDB_API_sec implements Runnable{
 
 	//Time on cpu
 	public long get_TimeOnCPU(String instance_id, int thread_num){
+		return this.getProcessInstrumentationData(instance_id, thread_num).getTimeOnCpu();
+	}
+	
+	//End time
+	public long get_EndTime(String instance_id, int thread_num){
 		return this.getProcessInstrumentationData(instance_id, thread_num).getTimeOnCpu();
 	}
 

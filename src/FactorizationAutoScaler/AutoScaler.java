@@ -94,16 +94,18 @@ public class AutoScaler {
 					totalinst = 0;
 					System.out.println("Instance id: " + id);
 					for(FactorizationElement element: db_api.getAllProcessInstrumentationData(id)){
-						System.out.println("Thread: " + element.getProcessID()
-						+ " time_on_cpu: " + element.getTimeOnCpu()
-						+ " bb: " + element.getDynNumBB()
-						+ " inst: " + element.getDynNumInst());
+						if((long)System.currentTimeMillis()-element.getEndTime() < 120000){
+							System.out.println("Thread: " + element.getProcessID()
+							+ " time_on_cpu: " + element.getTimeOnCpu()
+							+ " bb: " + element.getDynNumBB()
+							+ " inst: " + element.getDynNumInst());
 							avgcpu += element.getTimeOnCpu();
 							totaldynbb += element.getDynNumBB();
 							totalinst += element.getDynNumInst();
+						}
 					}
 					if((db_api.getAllProcessInstrumentationData(id).size()>0))
-							avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
+						avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
 					System.out.println("Avgcpu: " + avgcpu
 							+ " totalbb: " + totaldynbb 
 							+ " totalinst: " + totalinst);
@@ -115,26 +117,12 @@ public class AutoScaler {
 								+ " active_threads" + (activethreads > active_upper));
 						fullinstances += 1;
 					} else if(avgcpu < avgcpu_lower && totaldynbb < totalbb_lower && totalinst < totalinst_lower && activethreads == 0 && instance_ids.size() > 1){
-						//						for(String ide : instance_ids){
-						//							for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide)){
-						//								System.out.println("key" + f.getProcessID());
-						//								System.out.println("DELETING THREAD " + f.getProcessID());
-						//								db_api.deleteThread(f.getProcessID(), ide);
-						//							}
-						//						}
 						removeInstance(id);
 					} 	
-					
+
 				}
 
 				if(fullinstances == instance_ids.size()){
-					//					for(String ide2: instance_ids){
-					//						for(FactorizationElement f: db_api.getAllProcessInstrumentationData(ide2)){
-					//							System.out.println("key" + f.getProcessID());
-					//							System.out.println("DELETING THREAD " + f.getProcessID());
-					//							db_api.deleteThread(f.getProcessID(), ide2);
-					//						}
-					//					}
 					createInstance();
 				}	
 			}
@@ -192,13 +180,13 @@ public class AutoScaler {
 		db_api.deleteTable(id);
 		instance_ids.remove(id);
 	}
-	
+
 	public static String statusInstance(String id){
 		DescribeInstancesRequest describeInstanceRequest = new DescribeInstancesRequest().withInstanceIds(id);
-	    DescribeInstancesResult describeInstanceResult = ec2.describeInstances(describeInstanceRequest);
-	    InstanceState state = describeInstanceResult.getReservations().get(0).getInstances().get(0).getState();
-	    System.out.println("Instace " + id + " is " + state.getCode());
-	    return Integer.toString(state.getCode());
+		DescribeInstancesResult describeInstanceResult = ec2.describeInstances(describeInstanceRequest);
+		InstanceState state = describeInstanceResult.getReservations().get(0).getInstances().get(0).getState();
+		System.out.println("Instace " + id + " is " + state.getCode());
+		return Integer.toString(state.getCode());
 	}
 
 }

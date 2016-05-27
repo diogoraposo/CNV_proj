@@ -132,7 +132,7 @@ public class FactorizationDB_API {
 
 	private FactorizationElement map2Factor(Map<String, AttributeValue> item){
 		System.out.println(item);
-		return new FactorizationElement(item.get("processID").getS(), item.get("numFuncCalls").getS(), item.get("dynNumBB").getS(), item.get("dynNumInst").getS(), item.get("timeOnCpu").getS());
+		return new FactorizationElement(item.get("processID").getS(), item.get("numFuncCalls").getS(), item.get("dynNumBB").getS(), item.get("dynNumInst").getS(), item.get("timeOnCpu").getS(), item.get("endTime").getS());
 	}
 
 	public FactorizationElement getProcessInstrumentationData(String instance_id, int processID){
