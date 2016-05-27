@@ -11,11 +11,18 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
+import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatch.model.Datapoint;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import java.util.Date;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
@@ -94,6 +101,14 @@ public class LoadBalancer {
 		}
 	}
 
+	public static String statusInstance(String id){
+                DescribeInstancesRequest describeInstanceRequest = new DescribeInstancesRequest().withInstanceIds(id);
+                DescribeInstancesResult describeInstanceResult = ec2.describeInstances(describeInstanceRequest);
+                InstanceState state = describeInstanceResult.getReservations().get(0).getInstances().get(0).getState();
+                System.out.println("Instace " + id + " is " + state.getCode());
+                return Integer.toString(state.getCode());
+        }
+
 	static class requestInstance implements Runnable {
 		private BigInteger calc;
 		private ArrayList<BigInteger> answers;
@@ -108,9 +123,9 @@ public class LoadBalancer {
 		public void run() {
 
 			instance_ids = db_api.listTables();
-			for(String s : instance_ids){
-				System.out.println("Repeating list " + s);
-			}
+		//	for(String s : instance_ids){
+		//		System.out.println("Repeating list " + s);
+		//	}
 
 
 			int avgcpu;
@@ -119,19 +134,38 @@ public class LoadBalancer {
 			try{
 				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();
 				int lower = 0;
+				double cpuu = 0;
 				String instance = "";
 				for(String id: instance_tmps){
+					
+					final AmazonCloudWatchClient client = client();
+                                        final GetMetricStatisticsRequest request = request(id);
+                                        final GetMetricStatisticsResult result = result(client, request);
+					System.out.println("Result " + result.toString());
+                                        for (final Datapoint dataPoint : result.getDatapoints()) {
+                                                System.out.println(id + " instance's average CPU utilization : " + dataPoint.getAverage());
+                                        	if(cpuu==0){
+							cpuu=dataPoint.getAverage();
+							instance=id;
+							break;
+						} else if(cpuu>dataPoint.getAverage()){
+							cpuu=dataPoint.getAverage();
+                                                        instance=id;
+							break;
+						}
+					}				
+	
 					int temp;
 					avgcpu = 0;
 					totaldynbb = 0;
 					totalinst = 0;
 					System.out.println("Instance id: " + id);
 					for(FactorizationElement element: db_api.getAllProcessInstrumentationData(id)){
-						if((long)System.currentTimeMillis()-element.getEndTime() < 120000){
-							System.out.println("Thread: " + element.getProcessID()
-							+ " time_on_cpu: " + element.getTimeOnCpu()
-							+ " bb: " + element.getDynNumBB()
-							+ " inst: " + element.getDynNumInst());
+						if((long)System.currentTimeMillis()-element.getEndTime() < 20000){
+				//			System.out.println("Thread: " + element.getProcessID()
+				//			+ " time_on_cpu: " + element.getTimeOnCpu()
+				//			+ " bb: " + element.getDynNumBB()
+				//			+ " inst: " + element.getDynNumInst());
 							avgcpu += element.getTimeOnCpu();
 							totaldynbb += element.getDynNumBB();
 							totalinst += element.getDynNumInst();
@@ -139,16 +173,23 @@ public class LoadBalancer {
 					}
 					if(db_api.getAllProcessInstrumentationData(id).size()>0)
 						avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
-					System.out.println("Avgcpu: " + avgcpu
-							+ " totalbb: " + totaldynbb 
-							+ " totalinst: " + totalinst);
-					temp = (totaldynbb+totalinst)/avgcpu;
+				//	System.out.println("Avgcpu: " + avgcpu
+				//			+ " totalbb: " + totaldynbb 
+				//			+ " totalinst: " + totalinst);
+				//	System.out.println("STATUS INSTANCE: " + statusInstance(id));
+					if(statusInstance(id).equals("16")){
+					if(avgcpu==0){
+						instance = id;
+						break;
+					}
+					temp = totaldynbb + totalinst;
 					if(lower==0){
 						lower = temp;
 						instance = id;
-					} else if(temp > lower){
+					} else if(temp < lower){
 						lower = temp;
 						instance = id;
+					}
 					}
 
 				}
@@ -169,6 +210,30 @@ public class LoadBalancer {
 			return answers;
 		}
 	}
+
+	private static GetMetricStatisticsRequest request(final String instanceId) {
+                final long twentyFourHrs = 1000 * 60 * 60 * 24;
+                final int oneHour = 60 * 60;
+                return new GetMetricStatisticsRequest()
+            .withStartTime(new Date(new Date().getTime()- twentyFourHrs))
+            .withNamespace("AWS/EC2")
+            .withPeriod(oneHour)
+            .withDimensions(new Dimension().withName("InstanceId").withValue(instanceId))
+            .withMetricName("CPUUtilization")
+            .withStatistics("Average", "Maximum")
+            .withEndTime(new Date());
+         }
+
+        private static AmazonCloudWatchClient client() {
+                final AmazonCloudWatchClient client =new AmazonCloudWatchClient(new ProfileCredentialsProvider().getCredentials());
+		client.setEndpoint("http://monitoring.eu-west-1.amazonaws.com");
+		return client;
+        }
+
+        private static GetMetricStatisticsResult result(
+            final AmazonCloudWatchClient client, final GetMetricStatisticsRequest request) {
+            return client.getMetricStatistics(request);
+        }
 
 	private static String sendGet(String instanceID, BigInteger i) throws Exception {
 

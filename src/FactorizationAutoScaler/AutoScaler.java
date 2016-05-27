@@ -22,9 +22,14 @@ import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
-
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import com.amazonaws.services.cloudwatch.model.Datapoint;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import FactorizationDB.FactorizationDB_API;
 import FactorizationDB.FactorizationElement;
+import java.util.Date;
 
 
 public class AutoScaler {
@@ -88,17 +93,30 @@ public class AutoScaler {
 				fullinstances = 0;
 				ArrayList<String> instance_tmps = (ArrayList<String>) instance_ids.clone();	
 				for(String id: instance_tmps){
+
+					final AmazonCloudWatchClient client = client();
+				        final GetMetricStatisticsRequest request = request(id); 
+				        final GetMetricStatisticsResult result = result(client, request);
+					for (final Datapoint dataPoint : result.getDatapoints()) {
+        					System.out.println(id + " instance's average CPU utilization : " + dataPoint.getAverage());
+						if(dataPoint.getAverage()>60){
+							fullinstances+=1;
+							break;
+						}
+					
+					}
+					
 					activethreads = 0;
 					avgcpu = 0;
 					totaldynbb = 0;
 					totalinst = 0;
 					System.out.println("Instance id: " + id);
 					for(FactorizationElement element: db_api.getAllProcessInstrumentationData(id)){
-						if((long)System.currentTimeMillis()-element.getEndTime() < 120000){
-							System.out.println("Thread: " + element.getProcessID()
-							+ " time_on_cpu: " + element.getTimeOnCpu()
-							+ " bb: " + element.getDynNumBB()
-							+ " inst: " + element.getDynNumInst());
+						if((long)System.currentTimeMillis()-element.getEndTime() < 60000){
+						//	System.out.println("Thread: " + element.getProcessID()
+						//	+ " time_on_cpu: " + element.getTimeOnCpu()
+						//	+ " bb: " + element.getDynNumBB()
+						//	+ " inst: " + element.getDynNumInst());
 							avgcpu += element.getTimeOnCpu();
 							totaldynbb += element.getDynNumBB();
 							totalinst += element.getDynNumInst();
@@ -106,15 +124,16 @@ public class AutoScaler {
 					}
 					if((db_api.getAllProcessInstrumentationData(id).size()>0))
 						avgcpu = avgcpu/(db_api.getAllProcessInstrumentationData(id).size());
-					System.out.println("Avgcpu: " + avgcpu
-							+ " totalbb: " + totaldynbb 
-							+ " totalinst: " + totalinst);
+					//System.out.println("Avgcpu: " + avgcpu
+					//		+ " totalbb: " + totaldynbb 
+					//		+ " totalinst: " + totalinst);
 					statusInstance(id);
 					if(avgcpu > avgcpu_upper || totaldynbb > totalbb_upper || totalinst > totalinst_upper || activethreads > active_upper){
 						System.out.println("Full cause avgpu: " + (avgcpu > avgcpu_upper) 
 								+ " totaldynbb: " + (totaldynbb > totalbb_upper) 
 								+ " totalinst: " + (totalinst > totalinst_upper)
-								+ " active_threads" + (activethreads > active_upper));
+								+ " active_threads" + (activethreads > active_upper)
+								+ " fulla " + fullinstances);
 						fullinstances += 1;
 					} else if(avgcpu < avgcpu_lower && totaldynbb < totalbb_lower && totalinst < totalinst_lower && activethreads == 0 && instance_ids.size() > 1){
 						removeInstance(id);
@@ -122,7 +141,7 @@ public class AutoScaler {
 
 				}
 
-				if(fullinstances == instance_ids.size()){
+				if(fullinstances >= instance_ids.size()){
 					createInstance();
 				}	
 			}
@@ -134,12 +153,37 @@ public class AutoScaler {
 
 	}
 
+	private static GetMetricStatisticsRequest request(final String instanceId) {
+        	final long twentyFourHrs = 1000 * 60 * 60 * 24;
+        	final int oneHour = 60 * 60;
+        	return new GetMetricStatisticsRequest()
+            .withStartTime(new Date(new Date().getTime()- twentyFourHrs))
+            .withNamespace("AWS/EC2")
+            .withPeriod(oneHour)
+            .withDimensions(new Dimension().withName("InstanceId").withValue(instanceId))
+            .withMetricName("CPUUtilization")
+            .withStatistics("Average", "Maximum")
+            .withEndTime(new Date());
+   	 }		
+
+	private static AmazonCloudWatchClient client() {
+    		final AmazonCloudWatchClient client = new AmazonCloudWatchClient(new ProfileCredentialsProvider().getCredentials());
+        	client.setEndpoint("http://monitoring.eu-west-1.amazonaws.com");
+        	return client;
+	}
+
+	private static GetMetricStatisticsResult result(
+       	    final AmazonCloudWatchClient client, final GetMetricStatisticsRequest request) {
+     	    return client.getMetricStatistics(request);
+    	}	
+
+
 	public static void createInstance(){
 
 		System.out.println("Creating a new ec2 instance");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 
-		runInstancesRequest.withImageId("ami-a43cadd7")
+		runInstancesRequest.withImageId("ami-663dac15")
 		.withInstanceType("t2.micro")
 		.withMinCount(1)
 		.withMaxCount(1)

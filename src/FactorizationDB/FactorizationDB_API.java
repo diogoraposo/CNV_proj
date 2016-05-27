@@ -212,9 +212,9 @@ public class FactorizationDB_API {
 
 	public ArrayList<String> listTables(){
 		ListTablesResult result = _db.listTables();
-		for(String s: result.getTableNames()){
-			System.out.println("Table: " + s);
-		}
+	//	for(String s: result.getTableNames()){
+	//		System.out.println("Table: " + s);
+	//	}
 		return (ArrayList<String>)result.getTableNames();
 	}
 }
